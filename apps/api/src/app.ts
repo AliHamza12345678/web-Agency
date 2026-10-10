@@ -4,6 +4,10 @@ import { requestIdMiddleware } from './middleware/request-id.js';
 import { requestLoggerMiddleware } from './middleware/logger.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { healthRouter } from './routes/health.js';
+import { authRouter } from './routes/auth.js';
+import { tenantsRouter } from './routes/tenants.js';
+import { sitesRouter } from './routes/sites.js';
+import { publicSiteRouter } from './routes/public-site.js';
 import { NotFoundError } from '@openagent/core';
 
 export function createApp() {
@@ -34,6 +38,10 @@ export function createApp() {
 
   // 3. Mount Routes
   app.route('/health', healthRouter);
+  app.route('/api/v1/auth', authRouter);
+  app.route('/api/v1/admin/tenants', tenantsRouter);
+  app.route('/api/v1/admin/tenants', sitesRouter);
+  app.route('/api/v1/site', publicSiteRouter);
 
   // Root welcome / status
   app.get('/', (c) => {

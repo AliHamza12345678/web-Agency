@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, jsonb, index, customType } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, integer, jsonb, boolean, index, uniqueIndex, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 /**
@@ -21,19 +21,60 @@ export const vector = customType<{ data: number[]; driverData: string }>({
 });
 
 // ============================================================================
-// Tenants Table
+// Users Table (Authentication & Identity)
+// ============================================================================
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: text('email').notNull().unique(),
+    passwordHash: text('password_hash').notNull(),
+    name: text('name').notNull(),
+    isSuperAdmin: boolean('is_super_admin').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('users_email_idx').on(table.email),
+  ]
+);
+
+// ============================================================================
+// Tenants Table (Organizations / Workspaces)
 // ============================================================================
 export const tenants = pgTable('tenants', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
-  email: text('email').notNull().unique(),
   plan: text('plan').notNull().default('free'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ============================================================================
-// Sites Table
+// Tenant Members Table (Roles & RBAC Membership)
+// ============================================================================
+export const tenantMembers = pgTable(
+  'tenant_members',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role').notNull().default('member'), // 'owner' | 'admin' | 'member'
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('tenant_members_tenant_id_idx').on(table.tenantId),
+    index('tenant_members_user_id_idx').on(table.userId),
+    uniqueIndex('tenant_members_tenant_user_unique').on(table.tenantId, table.userId),
+  ]
+);
+
+// ============================================================================
+// Sites Table (Websites / Bots under a Tenant)
 // ============================================================================
 export const sites = pgTable(
   'sites',
@@ -152,8 +193,24 @@ export const messages = pgTable(
 // ============================================================================
 // Relational Definitions
 // ============================================================================
+export const usersRelations = relations(users, ({ many }) => ({
+  memberships: many(tenantMembers),
+}));
+
 export const tenantsRelations = relations(tenants, ({ many }) => ({
+  members: many(tenantMembers),
   sites: many(sites),
+}));
+
+export const tenantMembersRelations = relations(tenantMembers, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantMembers.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [tenantMembers.userId],
+    references: [users.id],
+  }),
 }));
 
 export const sitesRelations = relations(sites, ({ one, many }) => ({

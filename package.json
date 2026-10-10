@@ -11,6 +11,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit",
     "dev:api": "pnpm --filter @openagent/api dev",
+    "dev:web": "pnpm --filter @openagent/web dev",
     "db:generate": "pnpm --filter @openagent/db db:generate",
     "db:migrate": "pnpm --filter @openagent/db db:migrate"
   },

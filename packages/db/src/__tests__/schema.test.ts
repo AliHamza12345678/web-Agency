@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  users,
   tenants,
+  tenantMembers,
   sites,
   documents,
   documentChunks,
@@ -10,11 +12,27 @@ import {
 import { getTableColumns } from 'drizzle-orm';
 
 describe('Database Schema Definitions', () => {
+  it('defines the users table with secure authentication columns', () => {
+    const columns = getTableColumns(users);
+    expect(columns.id).toBeDefined();
+    expect(columns.email).toBeDefined();
+    expect(columns.passwordHash).toBeDefined();
+    expect(columns.name).toBeDefined();
+    expect(columns.isSuperAdmin).toBeDefined();
+  });
+
+  it('defines the tenant_members table with RBAC role and foreign keys', () => {
+    const columns = getTableColumns(tenantMembers);
+    expect(columns.id).toBeDefined();
+    expect(columns.tenantId).toBeDefined();
+    expect(columns.userId).toBeDefined();
+    expect(columns.role).toBeDefined();
+  });
+
   it('defines the tenants table with expected primary key and columns', () => {
     const columns = getTableColumns(tenants);
     expect(columns.id).toBeDefined();
     expect(columns.name).toBeDefined();
-    expect(columns.email).toBeDefined();
     expect(columns.plan).toBeDefined();
   });
 
