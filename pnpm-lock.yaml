@@ -29,6 +29,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.8
         version: 1.19.17(hono@4.13.13)
+      '@openagent/ai-provider':
+        specifier: workspace:*
+        version: link:../../packages/ai-provider
       '@openagent/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -91,6 +94,19 @@ importers:
       vitest:
         specifier: ^3.0.7
         version: 3.2.7(@types/node@26.6.4)(jsdom@30.1.2)(tsx@4.23.15)
+
+  packages/ai-provider:
+    dependencies:
+      '@openagent/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
 
   packages/core:
     dependencies:

@@ -8,6 +8,7 @@ import { authRouter } from './routes/auth.js';
 import { tenantsRouter } from './routes/tenants.js';
 import { sitesRouter } from './routes/sites.js';
 import { publicSiteRouter } from './routes/public-site.js';
+import { chatRouter } from './routes/chat.js';
 import { NotFoundError } from '@openagent/core';
 
 export function createApp() {
@@ -42,6 +43,7 @@ export function createApp() {
   app.route('/api/v1/admin/tenants', tenantsRouter);
   app.route('/api/v1/admin/tenants', sitesRouter);
   app.route('/api/v1/site', publicSiteRouter);
+  app.route('/api/v1/chat', chatRouter);
 
   // Serve compiled standalone widget bundle
   app.get('/widget.js', async (c) => {

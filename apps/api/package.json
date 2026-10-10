@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
+    "@openagent/ai-provider": "workspace:*",
     "@openagent/core": "workspace:*",
     "@openagent/db": "workspace:*",
     "dotenv": "^16.4.7",
