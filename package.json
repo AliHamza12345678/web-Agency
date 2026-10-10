@@ -1,0 +1,24 @@
+{
+  "name": "openagent-chat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-oriented, multilingual AI chatbot platform with website widget and strict multi-tenancy",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc --noEmit",
+    "dev:api": "pnpm --filter @openagent/api dev",
+    "db:generate": "pnpm --filter @openagent/db db:generate",
+    "db:migrate": "pnpm --filter @openagent/db db:migrate"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  },
+  "packageManager": "pnpm@11.20.0"
+}
