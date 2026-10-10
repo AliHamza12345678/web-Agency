@@ -43,6 +43,26 @@ export function createApp() {
   app.route('/api/v1/admin/tenants', sitesRouter);
   app.route('/api/v1/site', publicSiteRouter);
 
+  // Serve compiled standalone widget bundle
+  app.get('/widget.js', async (c) => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const { fileURLToPath } = await import('url');
+
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const widgetPath = path.resolve(__dirname, '../../../apps/widget/dist/widget.js');
+
+    if (fs.existsSync(widgetPath)) {
+      const code = fs.readFileSync(widgetPath, 'utf-8');
+      c.header('Content-Type', 'application/javascript; charset=utf-8');
+      c.header('Cache-Control', 'public, max-age=3600');
+      c.header('Access-Control-Allow-Origin', '*');
+      return c.body(code);
+    }
+
+    throw new NotFoundError('widget.js build asset was not found');
+  });
+
   // Root welcome / status
   app.get('/', (c) => {
     return c.json({
