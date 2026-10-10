@@ -8,7 +8,12 @@ import {
 } from '@openagent/core';
 import { getDb, sites } from '@openagent/db';
 import { eq } from 'drizzle-orm';
-import { createDefaultOrchestrator, type ChatMessage } from '@openagent/ai-provider';
+import { createDefaultOrchestrator } from '@openagent/ai-provider';
+import {
+  ConversationEngine,
+  type ConversationTurn,
+  type SitePersonaConfig,
+} from '@openagent/conversation-engine';
 
 export const chatRouter = new Hono();
 
@@ -26,8 +31,10 @@ const chatRequestSchema = z.object({
     .default([]),
 });
 
-// Lazy-initialized orchestrator
+// Lazy-initialized orchestrator & conversation engine
 let orchestratorInstance: ReturnType<typeof createDefaultOrchestrator> | null = null;
+let conversationEngineInstance: ConversationEngine | null = null;
+
 function getOrchestrator() {
   if (!orchestratorInstance) {
     orchestratorInstance = createDefaultOrchestrator();
@@ -35,8 +42,15 @@ function getOrchestrator() {
   return orchestratorInstance;
 }
 
+function getConversationEngine() {
+  if (!conversationEngineInstance) {
+    conversationEngineInstance = new ConversationEngine(getOrchestrator(), 6);
+  }
+  return conversationEngineInstance;
+}
+
 /**
- * Public Streaming Chat Endpoint (Server-Sent Events)
+ * Public Streaming Multilingual Chat Endpoint (Server-Sent Events)
  */
 chatRouter.post('/stream', async (c) => {
   const body = await c.req.json().catch(() => {
@@ -51,7 +65,7 @@ chatRouter.post('/stream', async (c) => {
   const { siteId, message, history } = parsed.data;
   const db = getDb();
 
-  // 1. Resolve site by public key or UUID
+  // 1. Resolve site by public key
   const [site] = await db
     .select({
       id: sites.id,
@@ -87,28 +101,47 @@ chatRouter.post('/stream', async (c) => {
     }
   }
 
-  // 3. Assemble prompt context
-  const defaultPrompt =
-    'You are a friendly, concise, and helpful website assistant. Always answer grounded in the site context. If unsure, politely refer the visitor to site contact.';
-  const systemInstruction = site.systemPrompt ? site.systemPrompt.trim() : defaultPrompt;
+  // 3. Configure Site Persona & Bounded Multilingual Dialogue State
+  const branding = (site.branding as any) || {};
+  const sitePersona: SitePersonaConfig = {
+    siteName: site.name,
+    botName: branding.botName || `${site.name} Assistant`,
+    systemPrompt: site.systemPrompt || undefined,
+    supportContact: branding.supportEmail || 'our customer care team',
+  };
 
-  const messages: ChatMessage[] = [
-    { role: 'system', content: `${systemInstruction}\n\nImportant: Always reply in the same language as the visitor's query.` },
-    ...history.slice(-6).map((h) => ({
-      role: (h.role === 'visitor' ? 'user' : h.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
-      content: h.content,
-    })),
-    { role: 'user', content: message.trim() },
-  ];
+  const formattedHistory: ConversationTurn[] = history.map((h) => ({
+    role: (h.role === 'assistant' ? 'assistant' : 'visitor') as 'visitor' | 'assistant',
+    content: h.content,
+  }));
 
-  const orchestrator = getOrchestrator();
+  const conversationEngine = getConversationEngine();
 
-  // 4. Stream response using SSE
+  // 4. Stream response using SSE with dynamic language matching
   return streamText(c, async (stream) => {
     try {
-      const tokenStream = orchestrator.generateStream(messages);
+      const tokenStream = conversationEngine.generateStream(
+        message.trim(),
+        formattedHistory,
+        sitePersona
+      );
+
+      let metadataEmitted = false;
 
       for await (const chunk of tokenStream) {
+        if (!metadataEmitted && chunk.languageInfo) {
+          metadataEmitted = true;
+          await stream.write(
+            `data: ${JSON.stringify({
+              meta: {
+                language: chunk.languageInfo.language,
+                script: chunk.languageInfo.script,
+                isCodeSwitching: chunk.languageInfo.isCodeSwitching,
+              },
+            })}\n\n`
+          );
+        }
+
         if (chunk.text) {
           await stream.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
         }

@@ -32,6 +32,9 @@ importers:
       '@openagent/ai-provider':
         specifier: workspace:*
         version: link:../../packages/ai-provider
+      '@openagent/conversation-engine':
+        specifier: workspace:*
+        version: link:../../packages/conversation-engine
       '@openagent/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -97,6 +100,22 @@ importers:
 
   packages/ai-provider:
     dependencies:
+      '@openagent/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
+  packages/conversation-engine:
+    dependencies:
+      '@openagent/ai-provider':
+        specifier: workspace:*
+        version: link:../ai-provider
       '@openagent/core':
         specifier: workspace:*
         version: link:../core
