@@ -9,6 +9,7 @@ import { tenantsRouter } from './routes/tenants.js';
 import { sitesRouter } from './routes/sites.js';
 import { publicSiteRouter } from './routes/public-site.js';
 import { chatRouter } from './routes/chat.js';
+import { knowledgeRouter } from './routes/knowledge.js';
 import { NotFoundError } from '@openagent/core';
 
 export function createApp() {
@@ -42,6 +43,7 @@ export function createApp() {
   app.route('/api/v1/auth', authRouter);
   app.route('/api/v1/admin/tenants', tenantsRouter);
   app.route('/api/v1/admin/tenants', sitesRouter);
+  app.route('/api/v1/admin/tenants', knowledgeRouter);
   app.route('/api/v1/site', publicSiteRouter);
   app.route('/api/v1/chat', chatRouter);
 

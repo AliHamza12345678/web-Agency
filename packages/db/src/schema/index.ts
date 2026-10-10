@@ -114,11 +114,17 @@ export const documents = pgTable(
     title: text('title').notNull(),
     sourceUrl: text('source_url'),
     content: text('content').notNull(),
+    type: text('type').notNull().default('url'), // 'url' | 'sitemap' | 'faq' | 'file' | 'policy'
+    status: text('status').notNull().default('ready'), // 'pending' | 'processing' | 'ready' | 'failed'
+    errorMessage: text('error_message'),
+    contentHash: text('content_hash'),
+    metadata: jsonb('metadata').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index('documents_site_id_idx').on(table.siteId),
+    index('documents_content_hash_idx').on(table.contentHash),
   ]
 );
 
@@ -138,6 +144,7 @@ export const documentChunks = pgTable(
     chunkIndex: integer('chunk_index').notNull(),
     content: text('content').notNull(),
     embedding: vector('embedding'),
+    metadata: jsonb('metadata').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

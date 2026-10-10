@@ -24,6 +24,27 @@ vi.mock('@openagent/ai-provider', () => ({
   }),
 }));
 
+// Mock Knowledge Retriever
+vi.mock('@openagent/knowledge', () => ({
+  HybridRetriever: vi.fn().mockImplementation(() => ({
+    search: vi.fn().mockResolvedValue([
+      {
+        chunkId: 'c1',
+        title: 'Store FAQ',
+        content: 'Hours are 9am to 6pm.',
+        score: 0.9,
+      },
+    ]),
+  })),
+  ContextSynthesizer: vi.fn().mockImplementation(() => ({
+    synthesize: vi.fn().mockReturnValue({
+      contextBlock: '<verified_site_knowledge>Hours are 9am to 6pm.</verified_site_knowledge>',
+      citations: [{ title: 'Store FAQ', snippet: 'Hours are 9am to 6pm.' }],
+      hasEvidence: true,
+    }),
+  })),
+}));
+
 import { getDb } from '@openagent/db';
 
 describe('Public Streaming Chat Endpoint (POST /api/v1/chat/stream)', () => {

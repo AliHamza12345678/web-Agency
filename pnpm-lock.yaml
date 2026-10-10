@@ -41,6 +41,9 @@ importers:
       '@openagent/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@openagent/knowledge':
+        specifier: workspace:*
+        version: link:../../packages/knowledge
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
@@ -155,6 +158,28 @@ importers:
       tsx:
         specifier: ^4.19.3
         version: 4.23.15
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
+  packages/knowledge:
+    dependencies:
+      '@openagent/ai-provider':
+        specifier: workspace:*
+        version: link:../ai-provider
+      '@openagent/core':
+        specifier: workspace:*
+        version: link:../core
+      '@openagent/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.40.0
+        version: 0.40.1(gel@2.2.1)(postgres@3.4.9)
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3

@@ -14,6 +14,7 @@ import {
   type ConversationTurn,
   type SitePersonaConfig,
 } from '@openagent/conversation-engine';
+import { HybridRetriever, ContextSynthesizer } from '@openagent/knowledge';
 
 export const chatRouter = new Hono();
 
@@ -101,12 +102,26 @@ chatRouter.post('/stream', async (c) => {
     }
   }
 
-  // 3. Configure Site Persona & Bounded Multilingual Dialogue State
+  // 3. Retrieve Tenant-Isolated Knowledge Chunks (RAG)
+  const retriever = new HybridRetriever();
+  const synthesizer = new ContextSynthesizer();
+
+  const retrievedChunks = await retriever.search({
+    query: message.trim(),
+    siteId: site.id,
+    topK: 4,
+    minScore: 0.5,
+  }).catch(() => []);
+
+  const groundedPayload = synthesizer.synthesize(retrievedChunks);
+
+  // 4. Configure Site Persona & Bounded Multilingual Dialogue State
   const branding = (site.branding as any) || {};
   const sitePersona: SitePersonaConfig = {
     siteName: site.name,
     botName: branding.botName || `${site.name} Assistant`,
     systemPrompt: site.systemPrompt || undefined,
+    approvedKnowledge: groundedPayload.contextBlock || undefined,
     supportContact: branding.supportEmail || 'our customer care team',
   };
 
@@ -117,7 +132,7 @@ chatRouter.post('/stream', async (c) => {
 
   const conversationEngine = getConversationEngine();
 
-  // 4. Stream response using SSE with dynamic language matching
+  // 5. Stream response using SSE with dynamic language matching & citations
   return streamText(c, async (stream) => {
     try {
       const tokenStream = conversationEngine.generateStream(
@@ -137,6 +152,7 @@ chatRouter.post('/stream', async (c) => {
                 language: chunk.languageInfo.language,
                 script: chunk.languageInfo.script,
                 isCodeSwitching: chunk.languageInfo.isCodeSwitching,
+                citations: groundedPayload.citations,
               },
             })}\n\n`
           );
