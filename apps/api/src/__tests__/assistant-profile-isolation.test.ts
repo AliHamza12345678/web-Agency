@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import { signJwt } from '@openagent/core';
 import { errorHandler } from '../middleware/error-handler.js';
-import type { SiteStudioConfig, AssistantProfile } from '@openagent/core';
+import type { AssistantProfile } from '@openagent/core';
 
 // Mock dependencies
 const mockDb = {
