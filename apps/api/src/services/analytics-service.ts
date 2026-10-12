@@ -276,7 +276,7 @@ export class AnalyticsService {
       .orderBy(desc(analyticsEvents.createdAt))
       .limit(limit);
 
-    return eventRows.map((row) => {
+    return eventRows.map((row: any) => {
       const meta = (row.metadata || {}) as Record<string, any>;
       return {
         id: row.id,
@@ -382,7 +382,7 @@ export class AnalyticsService {
       .offset(offset);
 
     const summaries: ConversationSummary[] = await Promise.all(
-      convRows.map(async (c) => {
+      convRows.map(async (c: any) => {
         // Fetch message count and last message preview
         const msgs = await db
           .select({
@@ -459,7 +459,7 @@ export class AnalyticsService {
       hasHandoff: conv.hasHandoff,
       isLowConfidence: conv.isLowConfidence,
       feedback: conv.feedback as any,
-      messages: messageRows.map((m) => ({
+      messages: messageRows.map((m: any) => ({
         id: m.id,
         role: m.role as any,
         content: redactPii(m.content),
@@ -518,7 +518,7 @@ export class AnalyticsService {
     });
 
     const detailedList = await Promise.all(
-      convList.conversations.map((c) => this.getConversationDetail(params.siteId, c.id))
+      convList.conversations.map((c: any) => this.getConversationDetail(params.siteId, c.id))
     );
 
     await this.logAdminAccess({

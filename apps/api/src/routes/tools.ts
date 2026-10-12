@@ -300,7 +300,7 @@ toolsRouter.get('/public/status', async (c) => {
     success: true,
     data: {
       siteName: site.name,
-      tools: statuses.map((s) => ({
+      tools: statuses.map((s: any) => ({
         toolId: s.toolId,
         name: s.name,
         enabled: s.enabled,

@@ -84,14 +84,18 @@ function sanitizeStudioConfiguration(input: SiteStudioConfig): SiteStudioConfig 
         triggerConditions: (cfg.profile.escalationProcedure?.triggerConditions || []).map((t) => sanitizeText(t)).filter(Boolean),
         procedureText: sanitizeText(cfg.profile.escalationProcedure?.procedureText || ''),
       },
-      verifiedFacts: (cfg.profile.verifiedFacts || []).map((f) => ({
-        label: sanitizeText(f.label),
-        fact: sanitizeText(f.fact),
-      })).filter((f) => f.label && f.fact),
-      verifiedPolicies: (cfg.profile.verifiedPolicies || []).map((p) => ({
-        name: sanitizeText(p.name),
-        rule: sanitizeText(p.rule),
-      })).filter((p) => p.name && p.rule),
+      verifiedFacts: ((cfg.profile.verifiedFacts || []) as Array<{ label?: string; fact?: string }>)
+        .map((f: { label?: string; fact?: string }) => ({
+          label: sanitizeText(f.label || ''),
+          fact: sanitizeText(f.fact || ''),
+        }))
+        .filter((f: { label: string; fact: string }) => Boolean(f.label && f.fact)),
+      verifiedPolicies: ((cfg.profile.verifiedPolicies || []) as Array<{ name?: string; rule?: string }>)
+        .map((p: { name?: string; rule?: string }) => ({
+          name: sanitizeText(p.name || ''),
+          rule: sanitizeText(p.rule || ''),
+        }))
+        .filter((p: { name: string; rule: string }) => Boolean(p.name && p.rule)),
     },
   };
 }
