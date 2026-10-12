@@ -5,7 +5,7 @@
   "main": "./src/server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "pnpm --filter \"@openagent/api^...\" build && tsc --build",
+    "build": "pnpm --filter @openagent/core build && pnpm --filter @openagent/db build && pnpm --filter @openagent/ai-provider build && pnpm --filter @openagent/conversation-engine build && pnpm --filter @openagent/knowledge build && pnpm --filter @openagent/tools build && tsc --build",
     "start": "node dist/server.js",
     "test": "vitest run"
   },
