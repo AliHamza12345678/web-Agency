@@ -56,7 +56,7 @@ sitesRouter.get('/:tenantId/sites', requireTenantAccess('site:read'), async (c) 
     .orderBy(sites.createdAt);
 
   // Fetch quick metrics for each site
-  const siteIds = siteList.map((s) => s.id);
+  const siteIds = siteList.map((s: any) => s.id);
   const metricsMap: Record<string, { docsCount: number; convsCount: number }> = {};
 
   if (siteIds.length > 0) {
@@ -86,7 +86,7 @@ sitesRouter.get('/:tenantId/sites', requireTenantAccess('site:read'), async (c) 
     }
   }
 
-  const result = siteList.map((s) => ({
+  const result = siteList.map((s: any) => ({
     ...s,
     stats: metricsMap[s.id] || { docsCount: 0, convsCount: 0 },
   }));
@@ -198,7 +198,7 @@ sitesRouter.put('/:tenantId/sites/:siteId', requireTenantAccess('site:update'), 
     updatedAt: new Date(),
   };
 
-  if (parsed.data.name !== undefined) updateValues.name = parsed.data.name.trim();
+  if (typeof parsed.data.name === 'string') updateValues.name = parsed.data.name.trim();
   if (parsed.data.allowedOrigins !== undefined) updateValues.allowedOrigins = parsed.data.allowedOrigins;
   if (parsed.data.systemPrompt !== undefined) updateValues.systemPrompt = parsed.data.systemPrompt;
   if (parsed.data.branding !== undefined) updateValues.branding = parsed.data.branding;

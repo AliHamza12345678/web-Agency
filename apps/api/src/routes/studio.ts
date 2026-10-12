@@ -51,7 +51,7 @@ function sanitizeStudioConfiguration(input: SiteStudioConfig): SiteStudioConfig 
       ...cfg.messaging,
       welcomeMessage: sanitizeText(cfg.messaging.welcomeMessage) || 'Hello! How can I help you today?',
       placeholder: sanitizeText(cfg.messaging.placeholder) || 'Ask anything...',
-      suggestedQuestions: cfg.messaging.suggestedQuestions.map((q) => sanitizeText(q)).filter(Boolean),
+      suggestedQuestions: (cfg.messaging.suggestedQuestions || []).map((q: string) => sanitizeText(q)).filter(Boolean),
     },
     behavior: {
       ...cfg.behavior,
@@ -75,13 +75,13 @@ function sanitizeStudioConfiguration(input: SiteStudioConfig): SiteStudioConfig 
       businessDescription: sanitizeText(cfg.profile.businessDescription || ''),
       topicScope: {
         ...cfg.profile.topicScope,
-        allowedTopics: (cfg.profile.topicScope?.allowedTopics || []).map((t) => sanitizeText(t)).filter(Boolean),
-        outOfScopeTopics: (cfg.profile.topicScope?.outOfScopeTopics || []).map((t) => sanitizeText(t)).filter(Boolean),
+        allowedTopics: ((cfg.profile.topicScope?.allowedTopics || []) as string[]).map((t: string) => sanitizeText(t)).filter(Boolean),
+        outOfScopeTopics: ((cfg.profile.topicScope?.outOfScopeTopics || []) as string[]).map((t: string) => sanitizeText(t)).filter(Boolean),
         outOfScopeMessage: sanitizeText(cfg.profile.topicScope?.outOfScopeMessage || ''),
       },
       escalationProcedure: {
         ...cfg.profile.escalationProcedure,
-        triggerConditions: (cfg.profile.escalationProcedure?.triggerConditions || []).map((t) => sanitizeText(t)).filter(Boolean),
+        triggerConditions: ((cfg.profile.escalationProcedure?.triggerConditions || []) as string[]).map((t: string) => sanitizeText(t)).filter(Boolean),
         procedureText: sanitizeText(cfg.profile.escalationProcedure?.procedureText || ''),
       },
       verifiedFacts: ((cfg.profile.verifiedFacts || []) as Array<{ label?: string; fact?: string }>)

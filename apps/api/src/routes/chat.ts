@@ -364,7 +364,7 @@ chatRouter.post('/stream', async (c) => {
 
   const activeTools = ToolRegistry.getInstance()
     .getAll()
-    .filter((t) => !disabledTools.has(t.id));
+    .filter((t: any) => !disabledTools.has(t.id));
 
   const toolsPrompt = ToolPromptFormatter.formatToolsSystemPrompt(activeTools);
 
@@ -383,7 +383,7 @@ chatRouter.post('/stream', async (c) => {
 
   // Bound conversation history to last 8 turns to prevent token runaway and excessive latency
   const boundedHistory = (history || []).slice(-8);
-  const formattedHistory: ConversationTurn[] = boundedHistory.map((h) => ({
+  const formattedHistory: ConversationTurn[] = boundedHistory.map((h: any) => ({
     role: (h.role === 'assistant' ? 'assistant' : 'visitor') as 'visitor' | 'assistant',
     content: h.content,
   }));
