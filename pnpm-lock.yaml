@@ -32,7 +32,7 @@ importers:
   apps/api:
     dependencies:
       '@hono/node-server':
-        specifier: ^1.13.8
+        specifier: ^1.19.17
         version: 1.19.17(hono@4.13.13)
       '@openagent/ai-provider':
         specifier: workspace:*
@@ -59,7 +59,7 @@ importers:
         specifier: '>=0.45.2'
         version: 0.45.4(gel@2.2.1)(postgres@3.4.9)
       hono:
-        specifier: ^4.7.2
+        specifier: ^4.13.13
         version: 4.13.13
       zod:
         specifier: ^3.24.2
