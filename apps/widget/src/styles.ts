@@ -309,7 +309,8 @@ export const widgetStyles = `
   opacity: 1;
 }
 
-.oa-copy-btn {
+.oa-copy-btn,
+.oa-feedback-btn {
   background: transparent;
   border: none;
   font-size: 11px;
@@ -320,10 +321,18 @@ export const widgetStyles = `
   gap: 4px;
   padding: 2px 4px;
   border-radius: 4px;
+  transition: transform 0.1s ease, color 0.15s ease;
 }
 
-.oa-copy-btn:hover {
+.oa-copy-btn:hover,
+.oa-feedback-btn:hover {
   color: #475569;
+  transform: scale(1.1);
+}
+
+.oa-feedback-btn.oa-selected {
+  color: var(--oa-primary, #6366f1);
+  font-weight: 700;
 }
 
 /* Markdown Styling inside bubbles */

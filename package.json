@@ -13,7 +13,8 @@
     "dev:api": "pnpm --filter @openagent/api dev",
     "dev:web": "pnpm --filter @openagent/web dev",
     "db:generate": "pnpm --filter @openagent/db db:generate",
-    "db:migrate": "pnpm --filter @openagent/db db:migrate"
+    "db:migrate": "pnpm --filter @openagent/db db:migrate",
+    "smoke-test": "tsx scripts/smoke-test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

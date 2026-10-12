@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../api.js';
 import type { User, TenantMembership } from '../types.js';
 
@@ -8,12 +8,24 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [isRegister, setIsRegister] = useState(false);
+  const [allowRegistration, setAllowRegistration] = useState<boolean>(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [orgName, setOrgName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getAuthConfig()
+      .then((cfg) => {
+        setAllowRegistration(cfg.allowRegistration);
+        if (!cfg.allowRegistration) {
+          setIsRegister(false);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,19 +166,36 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         </form>
 
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            style={{ fontSize: '0.875rem', cursor: 'pointer', border: 'none' }}
-            onClick={() => {
-              setIsRegister(!isRegister);
-              setError(null);
-            }}
-          >
-            {isRegister
-              ? 'Already have an administrator account? Sign In'
-              : "Don't have an organization yet? Create One"}
-          </button>
+          {allowRegistration ? (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: '0.875rem', cursor: 'pointer', border: 'none' }}
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setError(null);
+              }}
+            >
+              {isRegister
+                ? 'Already have an administrator account? Sign In'
+                : "Don't have an organization yet? Create One"}
+            </button>
+          ) : (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.8125rem',
+              color: 'var(--text-muted)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              padding: '6px 14px',
+              borderRadius: '999px',
+              border: '1px solid var(--border-subtle)',
+            }}>
+              <span>🔒</span>
+              <span>Private Agency Portal — Registration closed</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

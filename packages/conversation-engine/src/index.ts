@@ -5,3 +5,4 @@ export * from './prompt-builder.js';
 export * from './conversation-engine.js';
 export * from './evaluation/evaluator.js';
 export * from './evaluation/conversations.js';
+export * from './assistant-profile.js';

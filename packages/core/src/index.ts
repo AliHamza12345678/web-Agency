@@ -4,3 +4,6 @@ export * from './logger.js';
 export * from './types.js';
 export * from './auth.js';
 export * from './rbac.js';
+export * from './sanitize.js';
+export * from './pii-redactor.js';
+export * from './adversarial-guard.js';

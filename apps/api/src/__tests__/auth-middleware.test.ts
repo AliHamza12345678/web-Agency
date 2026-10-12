@@ -83,4 +83,53 @@ describe('Authentication Middleware', () => {
     expect(json.user.userId).toBe('u_123');
     expect(json.user.email).toBe('admin@openagent.com');
   });
+
+  describe('Registration Lockdown Controls', () => {
+    it('returns allowRegistration false when ALLOW_REGISTRATION is false', async () => {
+      const origEnv = process.env.ALLOW_REGISTRATION;
+      process.env.ALLOW_REGISTRATION = 'false';
+
+      const { authRouter } = await import('../routes/auth.js');
+      const testApp = new Hono();
+      testApp.route('/auth', authRouter);
+      testApp.onError(errorHandler);
+
+      const res = await testApp.request('/auth/config');
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as any;
+      expect(json.success).toBe(true);
+      expect(json.data.allowRegistration).toBe(false);
+
+      process.env.ALLOW_REGISTRATION = origEnv;
+    });
+
+    it('rejects POST /auth/register with 403 Forbidden when registration is disabled', async () => {
+      const origEnv = process.env.ALLOW_REGISTRATION;
+      process.env.ALLOW_REGISTRATION = 'false';
+
+      const { authRouter } = await import('../routes/auth.js');
+      const testApp = new Hono();
+      testApp.route('/auth', authRouter);
+      testApp.onError(errorHandler);
+
+      const res = await testApp.request('/auth/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: 'intruder@example.com',
+          password: 'password123',
+          name: 'Intruder',
+        }),
+      });
+
+      expect(res.status).toBe(403);
+      const json = (await res.json()) as any;
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('FORBIDDEN');
+      expect(json.error.message).toContain('restricted');
+
+      process.env.ALLOW_REGISTRATION = origEnv;
+    });
+  });
 });
+

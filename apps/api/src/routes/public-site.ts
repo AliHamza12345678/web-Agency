@@ -11,11 +11,39 @@ import { eq } from 'drizzle-orm';
 
 export const publicSiteRouter = new Hono();
 
+interface CachedSiteRecord {
+  site: {
+    id: string;
+    publicKey: string;
+    name: string;
+    branding: any;
+    publishedConfiguration: any;
+    publishedVersion: number;
+    allowedOrigins: string[] | null;
+  };
+  expiresAt: number;
+}
+
+const siteConfigCache = new Map<string, CachedSiteRecord>();
+const CACHE_TTL_MS = 60 * 1000; // 60s cache TTL
+
+/**
+ * Invalidate cached public site configs on configuration updates.
+ */
+export function invalidatePublicSiteConfigCache(publicKey?: string) {
+  if (publicKey) {
+    siteConfigCache.delete(publicKey);
+  } else {
+    siteConfigCache.clear();
+  }
+}
+
 /**
  * Public widget handshake endpoint:
  * Fetches site branding and public config using public key.
  * Enforces allowed origin validation against request Origin header.
  * Strictly avoids leaking backend credentials, tenant IDs, or private prompts.
+ * Uses bounded in-memory cache with safe TTL to protect database connection pools.
  */
 publicSiteRouter.get('/config', async (c) => {
   const publicKey = c.req.query('publicKey');
@@ -23,21 +51,37 @@ publicSiteRouter.get('/config', async (c) => {
     throw new ValidationError('A valid publicKey (pk_live_...) is required');
   }
 
-  const db = getDb();
-  const [site] = await db
-    .select({
-      id: sites.id,
-      publicKey: sites.publicKey,
-      name: sites.name,
-      branding: sites.branding,
-      allowedOrigins: sites.allowedOrigins,
-    })
-    .from(sites)
-    .where(eq(sites.publicKey, publicKey))
-    .limit(1);
+  const now = Date.now();
+  let site: CachedSiteRecord['site'] | undefined;
 
-  if (!site) {
-    throw new NotFoundError('Site with specified public key was not found');
+  const cached = siteConfigCache.get(publicKey);
+  if (cached && cached.expiresAt > now) {
+    site = cached.site;
+  } else {
+    const db = getDb();
+    const [found] = await db
+      .select({
+        id: sites.id,
+        publicKey: sites.publicKey,
+        name: sites.name,
+        branding: sites.branding,
+        publishedConfiguration: sites.publishedConfiguration,
+        publishedVersion: sites.publishedVersion,
+        allowedOrigins: sites.allowedOrigins,
+      })
+      .from(sites)
+      .where(eq(sites.publicKey, publicKey))
+      .limit(1);
+
+    if (!found) {
+      throw new NotFoundError('Site with specified public key was not found');
+    }
+
+    site = found;
+    siteConfigCache.set(publicKey, {
+      site: found,
+      expiresAt: now + CACHE_TTL_MS,
+    });
   }
 
   // Check allowed origins if configured
@@ -64,6 +108,11 @@ publicSiteRouter.get('/config', async (c) => {
     publicKey: site.publicKey,
     name: site.name,
     branding: (site.branding || {}) as any,
+    publishedVersion: site.publishedVersion || 1,
+    studioConfig:
+      site.publishedConfiguration && Object.keys(site.publishedConfiguration).length > 0
+        ? (site.publishedConfiguration as any)
+        : undefined,
   };
 
   const response: ApiSuccessResponse<PublicSiteConfig> = {
@@ -73,6 +122,9 @@ publicSiteRouter.get('/config', async (c) => {
       timestamp: new Date().toISOString(),
     },
   };
+
+  c.header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=60');
+  c.header('Vary', 'Origin');
 
   return c.json(response, 200);
 });

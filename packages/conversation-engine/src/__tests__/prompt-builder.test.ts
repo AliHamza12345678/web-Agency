@@ -111,4 +111,29 @@ describe('Multilingual Prompt Builder & Policy Synthesis', () => {
     expect(prompt).toContain('User wants Medium size in Black');
     expect(prompt).toContain('Standard delivery takes 3 business days');
   });
+
+  it('injects server-authorized tools directives into system prompt when configured', () => {
+    const prompt = builder.buildSystemPrompt({
+      sitePersona: {
+        siteName: 'Store',
+        botName: 'Bot',
+        toolsPrompt: 'APPROVED BUSINESS TOOLS & ACTIONS:\n- search_product_catalog\n- create_support_request',
+      },
+      detectedLang: {
+        language: 'en',
+        script: 'latin',
+        confidence: 0.99,
+        isCodeSwitching: false,
+        codeSwitchLanguages: ['en'],
+        explicitSwitchRequested: false,
+        explanation: 'English',
+      },
+      recentTurns: [],
+      userQuery: 'Do you sell running shoes?',
+    });
+
+    expect(prompt).toContain('APPROVED BUSINESS TOOLS & ACTIONS:');
+    expect(prompt).toContain('search_product_catalog');
+    expect(prompt).toContain('create_support_request');
+  });
 });

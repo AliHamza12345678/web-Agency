@@ -14,6 +14,12 @@ vi.mock('@openagent/db', () => ({
     allowedOrigins: 'allowed_origins',
     branding: 'branding',
   },
+  siteIntegrations: {
+    id: 'id',
+    siteId: 'site_id',
+    toolId: 'tool_id',
+    enabled: 'enabled',
+  },
 }));
 
 // Mock AI Provider
@@ -130,18 +136,22 @@ describe('Public Streaming Chat Endpoint (POST /api/v1/chat/stream)', () => {
   });
 
   it('streams response successfully with SSE data format', async () => {
+    const siteResult = [
+      {
+        id: 'site_1',
+        publicKey: 'pk_live_valid',
+        name: 'Online Shop',
+        systemPrompt: 'You are an e-commerce assistant.',
+        allowedOrigins: ['https://valid-origin.com'],
+      },
+    ];
+
     mockSelect.mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue([
-            {
-              id: 'site_1',
-              publicKey: 'pk_live_valid',
-              name: 'Online Shop',
-              systemPrompt: 'You are an e-commerce assistant.',
-              allowedOrigins: ['https://valid-origin.com'],
-            },
-          ]),
+        where: vi.fn().mockImplementation(() => {
+          const promise = Promise.resolve([]) as any;
+          promise.limit = vi.fn().mockResolvedValue(siteResult);
+          return promise;
         }),
       }),
     });

@@ -5,6 +5,7 @@
     { "path": "./packages/ai-provider" },
     { "path": "./packages/conversation-engine" },
     { "path": "./packages/knowledge" },
+    { "path": "./packages/tools" },
     { "path": "./packages/db" },
     { "path": "./apps/api" }
   ]

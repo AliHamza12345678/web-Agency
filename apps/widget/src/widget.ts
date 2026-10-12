@@ -157,14 +157,45 @@ export class OpenAgentWidget {
     const color = this.client.config.primaryColor || '#6366f1';
     this.host.style.setProperty('--oa-primary', color);
 
+    if (this.client.config.accentColor) {
+      this.host.style.setProperty('--oa-accent', this.client.config.accentColor);
+    }
+    if (this.client.config.borderRadius !== undefined) {
+      this.host.style.setProperty('--oa-border-radius', `${this.client.config.borderRadius}px`);
+      this.panelEl.style.borderRadius = `${this.client.config.borderRadius}px`;
+    }
+    if (this.client.config.panelWidth) {
+      this.panelEl.style.width = `${this.client.config.panelWidth}px`;
+    }
+    if (this.client.config.panelHeight) {
+      this.panelEl.style.height = `${this.client.config.panelHeight}px`;
+    }
+
     const titleEl = this.shadow.querySelector('.oa-header-title');
     if (titleEl && this.client.config.botName) {
       titleEl.textContent = this.client.config.botName;
     }
 
+    const avatarEl = this.shadow.querySelector('.oa-avatar');
+    if (avatarEl && this.client.config.avatar) {
+      avatarEl.textContent = this.client.config.avatar;
+    }
+
     const welcomeEl = this.shadow.querySelector('.oa-welcome-text');
     if (welcomeEl && this.client.config.welcomeMessage) {
       welcomeEl.innerHTML = renderSafeMarkdown(this.client.config.welcomeMessage);
+    }
+
+    // Dynamic suggested questions from published studio configuration
+    if (this.client.config.suggestedQuestions && this.client.config.suggestedQuestions.length > 0) {
+      const suggestedContainer = this.shadow.querySelector('.oa-suggested');
+      if (suggestedContainer) {
+        let chipsHtml = '<span class="oa-suggested-title">Suggested Inquiries</span>';
+        for (const q of this.client.config.suggestedQuestions) {
+          chipsHtml += `<button type="button" class="oa-chip" data-query="${escapeHtml(q)}">${escapeHtml(q)}</button>`;
+        }
+        suggestedContainer.innerHTML = chipsHtml;
+      }
     }
   }
 
@@ -191,6 +222,18 @@ export class OpenAgentWidget {
           setTimeout(() => {
             btn.innerHTML = '📋 Copy';
           }, 2000);
+        }
+      } else if (target.classList.contains('oa-feedback-btn') || target.closest('.oa-feedback-btn')) {
+        const btn = (target.classList.contains('oa-feedback-btn') ? target : target.closest('.oa-feedback-btn')) as HTMLElement;
+        const rating = btn.getAttribute('data-rating') as 'positive' | 'negative';
+        if (rating) {
+          const parentActions = btn.closest('.oa-message-actions');
+          parentActions?.querySelectorAll('.oa-feedback-btn').forEach((b) => {
+            (b as HTMLElement).classList.remove('oa-selected');
+            (b as HTMLButtonElement).disabled = true;
+          });
+          btn.classList.add('oa-selected');
+          this.client.sendFeedback(rating);
         }
       }
     });
@@ -279,6 +322,12 @@ export class OpenAgentWidget {
     if (role === 'assistant') {
       actionsHtml = `
         <div class="oa-message-actions">
+          <button type="button" class="oa-feedback-btn" data-rating="positive" aria-label="Thumbs up" title="Helpful response">
+            👍
+          </button>
+          <button type="button" class="oa-feedback-btn" data-rating="negative" aria-label="Thumbs down" title="Unhelpful response">
+            👎
+          </button>
           <button type="button" class="oa-copy-btn" data-text="${escapeHtml(rawText)}" aria-label="Copy assistant answer">
             📋 Copy
           </button>

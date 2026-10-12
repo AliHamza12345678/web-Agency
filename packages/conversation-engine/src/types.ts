@@ -50,12 +50,16 @@ export interface BoundedHistoryResult {
   omittedTurnCount: number;
 }
 
+import type { AssistantProfile } from '@openagent/core';
+
 export interface SitePersonaConfig {
   siteName: string;
-  botName: string;
+  botName?: string;
   systemPrompt?: string;
   approvedKnowledge?: string;
   supportContact?: string;
+  toolsPrompt?: string;
+  profile?: AssistantProfile;
 }
 
 export interface MultilingualPromptOptions {

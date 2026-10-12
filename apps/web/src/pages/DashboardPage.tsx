@@ -3,6 +3,9 @@ import { api } from '../api.js';
 import type { TenantMembership, Site } from '../types.js';
 import { SiteModal } from '../components/SiteModal.js';
 import { ConfirmationModal } from '../components/ConfirmationModal.js';
+import { IntegrationsModal } from '../components/IntegrationsModal.js';
+import { StudioPage } from './StudioPage.js';
+import { AnalyticsPage } from './AnalyticsPage.js';
 
 interface DashboardPageProps {
   tenant: TenantMembership;
@@ -14,6 +17,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ tenant }) => {
   const [loading, setLoading] = useState(true);
   const [modalSite, setModalSite] = useState<Site | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [integrationsSite, setIntegrationsSite] = useState<Site | null>(null);
+  const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
+  const [selectedStudioSite, setSelectedStudioSite] = useState<Site | null>(null);
+  const [selectedAnalyticsSite, setSelectedAnalyticsSite] = useState<Site | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Site | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -90,6 +97,32 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ tenant }) => {
   const totalSites = sites.length;
   const totalDocs = sites.reduce((sum, s) => sum + (s.stats?.docsCount || 0), 0);
   const totalConvs = sites.reduce((sum, s) => sum + (s.stats?.convsCount || 0), 0);
+
+  if (selectedStudioSite) {
+    return (
+      <StudioPage
+        tenant={tenant}
+        site={selectedStudioSite}
+        onBack={() => {
+          setSelectedStudioSite(null);
+          fetchSites(search);
+        }}
+      />
+    );
+  }
+
+  if (selectedAnalyticsSite) {
+    return (
+      <AnalyticsPage
+        tenant={tenant}
+        site={selectedAnalyticsSite}
+        onBack={() => {
+          setSelectedAnalyticsSite(null);
+          fetchSites(search);
+        }}
+      />
+    );
+  }
 
   return (
     <main style={{ padding: '36px', maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
@@ -360,18 +393,63 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ tenant }) => {
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
+                  className="btn btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => setSelectedStudioSite(site)}
+                  title="Open No-Code Configuration Studio & Live Preview"
+                >
+                  🎨 Studio
+                </button>
+                <button
                   className="btn btn-secondary"
-                  style={{ flex: 1, padding: '8px' }}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => setSelectedAnalyticsSite(site)}
+                  title="Observability, Metrics & Conversation Management"
+                >
+                  📊 Analytics
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 10px' }}
                   onClick={() => {
                     setModalSite(site);
                     setIsModalOpen(true);
                   }}
+                  title="Quick Settings"
                 >
-                  Configure
+                  ⚙️
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => {
+                    setIntegrationsSite(site);
+                    setIsIntegrationsOpen(true);
+                  }}
+                  title="Configure tools and business integrations"
+                >
+                  ⚡
                 </button>
                 <button
                   className="btn btn-danger"
-                  style={{ padding: '8px 12px' }}
+                  style={{ padding: '8px 10px' }}
                   onClick={() => setDeleteTarget(site)}
                   title="Delete chatbot"
                 >
@@ -394,6 +472,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ tenant }) => {
         onSave={handleSaveSite}
         onRegenerateKey={handleRegenerateKey}
       />
+
+      {/* Phase 7: Business Integrations & Safe Tools Modal */}
+      {integrationsSite && (
+        <IntegrationsModal
+          site={integrationsSite}
+          tenantId={tenant.tenantId}
+          isOpen={isIntegrationsOpen}
+          onClose={() => {
+            setIsIntegrationsOpen(false);
+            setIntegrationsSite(null);
+          }}
+          showToast={showToast}
+        />
+      )}
 
       {/* Deletion Confirmation Modal */}
       <ConfirmationModal

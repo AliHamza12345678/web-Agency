@@ -3,9 +3,16 @@ export interface WidgetConfig {
   apiUrl?: string;
   position?: 'bottom-right' | 'bottom-left';
   primaryColor?: string;
+  accentColor?: string;
   botName?: string;
+  avatar?: string;
   welcomeMessage?: string;
   suggestedQuestions?: string[];
+  panelWidth?: number;
+  panelHeight?: number;
+  borderRadius?: number;
+  studioConfig?: any;
+  strategy?: 'immediate' | 'idle' | 'interaction';
 }
 
 export interface ChatMessage {
@@ -58,7 +65,20 @@ export class ChatClient {
         const site = data.data;
         this.siteName = site.name || this.siteName;
 
-        if (site.branding) {
+        if (site.studioConfig) {
+          const sc = site.studioConfig;
+          this.config.primaryColor = sc.theme?.primaryColor || this.config.primaryColor;
+          this.config.accentColor = sc.theme?.accentColor || this.config.accentColor;
+          this.config.botName = sc.assistant?.name || this.config.botName;
+          this.config.avatar = sc.assistant?.avatar || this.config.avatar;
+          this.config.welcomeMessage = sc.messaging?.welcomeMessage || this.config.welcomeMessage;
+          this.config.suggestedQuestions = sc.messaging?.suggestedQuestions || this.config.suggestedQuestions;
+          this.config.position = sc.theme?.launcherPosition || this.config.position;
+          this.config.panelWidth = sc.theme?.panelWidth || this.config.panelWidth;
+          this.config.panelHeight = sc.theme?.panelHeight || this.config.panelHeight;
+          this.config.borderRadius = sc.theme?.borderRadius || this.config.borderRadius;
+          this.config.studioConfig = sc;
+        } else if (site.branding) {
           this.config.primaryColor = site.branding.primaryColor || this.config.primaryColor;
           this.config.botName = site.branding.botName || this.config.botName;
           this.config.welcomeMessage = site.branding.welcomeMessage || this.config.welcomeMessage;
@@ -150,4 +170,29 @@ export class ChatClient {
       onError(err instanceof Error ? err : new Error(String(err)));
     }
   }
+
+  /**
+   * Send visitor feedback (thumbs up / thumbs down)
+   */
+  public async sendFeedback(rating: 'positive' | 'negative', comment?: string): Promise<boolean> {
+    try {
+      const url = `${this.config.apiUrl}/api/v1/chat/feedback`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-visitor-session': this.visitorSessionId,
+        },
+        body: JSON.stringify({
+          siteId: this.config.siteId,
+          rating,
+          comment,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
 }
+

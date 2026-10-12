@@ -141,3 +141,5 @@ export const defaultLogger = new Logger(
   'openagent-api',
   (process.env.LOG_LEVEL as LogLevel) || (process.env.NODE_ENV === 'development' ? 'debug' : 'info')
 );
+
+export const logger = defaultLogger;

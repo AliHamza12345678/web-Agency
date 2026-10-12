@@ -7,6 +7,7 @@ import {
   ValidationError,
   UnauthorizedError,
   ConflictError,
+  ForbiddenError,
   type ApiSuccessResponse,
 } from '@openagent/core';
 import { getDb, users, tenants, tenantMembers } from '@openagent/db';
@@ -14,6 +15,22 @@ import { eq } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth.js';
 
 export const authRouter = new Hono();
+
+/**
+ * Public authentication settings check (whether public signups are allowed)
+ */
+authRouter.get('/config', (c) => {
+  const response: ApiSuccessResponse<{ allowRegistration: boolean }> = {
+    success: true,
+    data: {
+      allowRegistration: process.env.ALLOW_REGISTRATION !== 'false',
+    },
+    meta: {
+      timestamp: new Date().toISOString(),
+    },
+  };
+  return c.json(response);
+});
 
 const registerSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -31,6 +48,10 @@ const loginSchema = z.object({
  * Register a new platform administrator or tenant owner.
  */
 authRouter.post('/register', async (c) => {
+  if (process.env.ALLOW_REGISTRATION === 'false') {
+    throw new ForbiddenError('Public registrations are closed. This dashboard is restricted exclusively to Web Agency administrators.');
+  }
+
   const body = await c.req.json().catch(() => {
     throw new ValidationError('Malformed JSON payload');
   });

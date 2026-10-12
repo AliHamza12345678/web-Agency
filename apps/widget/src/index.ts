@@ -42,6 +42,43 @@ if (window.__OPENAGENT_WIDGET_LOADED__) {
     return widget;
   };
 
+  /**
+   * Schedules lazy mounting based on selected loading strategy:
+   * - 'immediate': Mounts immediately
+   * - 'idle': Defers until browser main thread is idle (requestIdleCallback)
+   * - 'interaction': Defers until visitor moves mouse, scrolls, or touches screen
+   */
+  const scheduleInit = (config: WidgetConfig, strategy: 'immediate' | 'idle' | 'interaction' = 'immediate') => {
+    if (strategy === 'idle') {
+      const schedule = (window as any).requestIdleCallback
+        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 3000 })
+        : (cb: () => void) => setTimeout(cb, 1000);
+
+      if (document.readyState === 'complete') {
+        schedule(() => initWidget(config).catch(console.error));
+      } else {
+        window.addEventListener(
+          'load',
+          () => {
+            schedule(() => initWidget(config).catch(console.error));
+          },
+          { once: true }
+        );
+      }
+    } else if (strategy === 'interaction') {
+      const triggers = ['mousemove', 'touchstart', 'scroll', 'keydown'];
+      const onFirstInteraction = () => {
+        triggers.forEach((event) => window.removeEventListener(event, onFirstInteraction));
+        initWidget(config).catch(console.error);
+      };
+      triggers.forEach((event) => window.addEventListener(event, onFirstInteraction, { once: true, passive: true }));
+    } else {
+      initWidget(config).catch((err) => {
+        console.error('[OpenAgent] Initialization failed:', err);
+      });
+    }
+  };
+
   // 2. Expose Programmatic Global API
   window.OpenAgentChat = {
     init: initWidget,
@@ -52,7 +89,7 @@ if (window.__OPENAGENT_WIDGET_LOADED__) {
     sendMessage: (msg: string) => activeWidget?.submitMessage(msg),
   };
 
-  // 3. Auto-bootstrap from <script data-site-id="...">
+  // 3. Auto-bootstrap from <script data-site-id="..."> with lazy-loading support
   const currentScript = document.currentScript as HTMLScriptElement | null;
   if (currentScript) {
     const siteId = currentScript.getAttribute('data-site-id');
@@ -62,17 +99,24 @@ if (window.__OPENAGENT_WIDGET_LOADED__) {
     const botName = currentScript.getAttribute('data-bot-name') || undefined;
     const welcomeMessage = currentScript.getAttribute('data-welcome-message') || undefined;
 
+    const rawStrategy = currentScript.getAttribute('data-strategy');
+    const isDeferred = currentScript.getAttribute('data-defer') === 'true';
+    const strategy: 'immediate' | 'idle' | 'interaction' =
+      rawStrategy === 'idle' || isDeferred ? 'idle' : rawStrategy === 'interaction' ? 'interaction' : 'immediate';
+
     if (siteId) {
-      initWidget({
-        siteId,
-        apiUrl,
-        position,
-        primaryColor,
-        botName,
-        welcomeMessage,
-      }).catch((err) => {
-        console.error('[OpenAgent] Auto-initialization failed:', err);
-      });
+      scheduleInit(
+        {
+          siteId,
+          apiUrl,
+          position,
+          primaryColor,
+          botName,
+          welcomeMessage,
+          strategy,
+        },
+        strategy
+      );
     }
   }
 }
