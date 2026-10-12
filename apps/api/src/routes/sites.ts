@@ -120,16 +120,17 @@ sitesRouter.post('/:tenantId/sites', requireTenantAccess('site:create'), async (
   const db = getDb();
   const publicKey = `pk_live_${crypto.randomBytes(16).toString('hex')}`;
 
+  const siteData = parsed.data as any;
   const [newSite] = await db
     .insert(sites)
     .values({
       tenantId,
-      name: parsed.data.name.trim(),
+      name: String(siteData.name).trim(),
       publicKey,
-      allowedOrigins: parsed.data.allowedOrigins,
-      systemPrompt: parsed.data.systemPrompt,
-      branding: parsed.data.branding || {},
-      retentionDays: parsed.data.retentionDays,
+      allowedOrigins: siteData.allowedOrigins,
+      systemPrompt: siteData.systemPrompt,
+      branding: siteData.branding || {},
+      retentionDays: siteData.retentionDays,
     })
     .returning();
 
@@ -198,11 +199,12 @@ sitesRouter.put('/:tenantId/sites/:siteId', requireTenantAccess('site:update'), 
     updatedAt: new Date(),
   };
 
-  if (typeof parsed.data.name === 'string') updateValues.name = parsed.data.name.trim();
-  if (parsed.data.allowedOrigins !== undefined) updateValues.allowedOrigins = parsed.data.allowedOrigins;
-  if (parsed.data.systemPrompt !== undefined) updateValues.systemPrompt = parsed.data.systemPrompt;
-  if (parsed.data.branding !== undefined) updateValues.branding = parsed.data.branding;
-  if (parsed.data.retentionDays !== undefined) updateValues.retentionDays = parsed.data.retentionDays;
+  const updateData = parsed.data as any;
+  if (typeof updateData.name === 'string') updateValues.name = updateData.name.trim();
+  if (updateData.allowedOrigins !== undefined) updateValues.allowedOrigins = updateData.allowedOrigins;
+  if (updateData.systemPrompt !== undefined) updateValues.systemPrompt = updateData.systemPrompt;
+  if (updateData.branding !== undefined) updateValues.branding = updateData.branding;
+  if (updateData.retentionDays !== undefined) updateValues.retentionDays = updateData.retentionDays;
 
   const [updated] = await db
     .update(sites)

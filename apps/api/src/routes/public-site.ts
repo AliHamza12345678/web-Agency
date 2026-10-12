@@ -84,6 +84,10 @@ publicSiteRouter.get('/config', async (c) => {
     });
   }
 
+  if (!site) {
+    throw new NotFoundError('Site with specified public key was not found');
+  }
+
   // Check allowed origins if configured
   const requestOrigin = c.req.header('origin');
   if (site.allowedOrigins && site.allowedOrigins.length > 0 && requestOrigin) {
