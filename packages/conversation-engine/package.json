@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build --force",
     "test": "vitest run"
   },
   "dependencies": {
