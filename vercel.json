@@ -3,7 +3,8 @@
   "services": {
     "api": {
       "root": "apps/api",
-      "framework": "hono"
+      "framework": "hono",
+      "entrypoint": "src/index.ts"
     },
     "web": {
       "root": "apps/web",
