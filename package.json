@@ -10,6 +10,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "tsc --noEmit",
+    "dev": "pnpm --parallel --filter @openagent/api --filter @openagent/web dev",
     "dev:api": "pnpm --filter @openagent/api dev",
     "dev:web": "pnpm --filter @openagent/web dev",
     "db:generate": "pnpm --filter @openagent/db db:generate",
