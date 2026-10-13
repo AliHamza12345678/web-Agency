@@ -10,8 +10,18 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config();
 
 import { createApp } from './app.js';
+import { handle } from '@hono/node-server/vercel';
 
 const app = createApp();
+const nodeHandler = handle(app);
 
-export default app;
+export default function handler(req: any, res?: any) {
+  if (res && typeof res.writeHead === 'function') {
+    return nodeHandler(req, res);
+  }
+  return app.fetch(req);
+}
+
+handler.fetch = app.fetch.bind(app);
+
 
