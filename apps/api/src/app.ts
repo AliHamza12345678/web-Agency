@@ -55,11 +55,23 @@ export function createApp() {
     rateLimiter({ windowMs: 60 * 1000, maxRequests: 20, keyPrefix: 'auth_ip' })
   );
   app.use(
+    '/v1/auth/*',
+    rateLimiter({ windowMs: 60 * 1000, maxRequests: 20, keyPrefix: 'auth_ip' })
+  );
+  app.use(
     '/api/v1/chat/*',
     rateLimiter({ windowMs: 60 * 1000, maxRequests: 60, keyPrefix: 'chat_ip' })
   );
   app.use(
+    '/v1/chat/*',
+    rateLimiter({ windowMs: 60 * 1000, maxRequests: 60, keyPrefix: 'chat_ip' })
+  );
+  app.use(
     '/api/v1/site/*',
+    rateLimiter({ windowMs: 60 * 1000, maxRequests: 120, keyPrefix: 'site_ip' })
+  );
+  app.use(
+    '/v1/site/*',
     rateLimiter({ windowMs: 60 * 1000, maxRequests: 120, keyPrefix: 'site_ip' })
   );
 
@@ -73,7 +85,9 @@ export function createApp() {
     cors({
       origin: (origin) => {
         if (!origin) return allowedOrigins[0] || '*';
-        return allowedOrigins.includes(origin) ? origin : null;
+        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) return origin;
+        if (origin.endsWith('.vercel.app')) return origin;
+        return null;
       },
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-visitor-session'],
@@ -84,16 +98,24 @@ export function createApp() {
 
   // 3. Mount Routes
   app.route('/health', healthRouter);
-  app.route('/api/v1/auth', authRouter);
-  app.route('/api/v1/admin/tenants', tenantsRouter);
-  app.route('/api/v1/admin/tenants', sitesRouter);
-  app.route('/api/v1/admin/tenants', knowledgeRouter);
-  app.route('/api/v1/admin/tenants', adminToolsRouter);
-  app.route('/api/v1/admin/tenants', studioRouter);
-  app.route('/api/v1/admin/tenants', analyticsRouter);
-  app.route('/api/v1/site', publicSiteRouter);
-  app.route('/api/v1/chat', chatRouter);
-  app.route('/api/v1/tools', toolsRouter);
+  app.route('/api/health', healthRouter);
+
+  // Support both /api/v1/* and /v1/* in case reverse proxy or rewrite strips prefix
+  const registerRoutes = (prefix: string) => {
+    app.route(`${prefix}/v1/auth`, authRouter);
+    app.route(`${prefix}/v1/admin/tenants`, tenantsRouter);
+    app.route(`${prefix}/v1/admin/tenants`, sitesRouter);
+    app.route(`${prefix}/v1/admin/tenants`, knowledgeRouter);
+    app.route(`${prefix}/v1/admin/tenants`, adminToolsRouter);
+    app.route(`${prefix}/v1/admin/tenants`, studioRouter);
+    app.route(`${prefix}/v1/admin/tenants`, analyticsRouter);
+    app.route(`${prefix}/v1/site`, publicSiteRouter);
+    app.route(`${prefix}/v1/chat`, chatRouter);
+    app.route(`${prefix}/v1/tools`, toolsRouter);
+  };
+
+  registerRoutes('/api');
+  registerRoutes('');
 
   // Serve compiled standalone widget bundle with in-memory caching & immutable CDN headers
   let cachedWidgetBundle: string | null = null;
