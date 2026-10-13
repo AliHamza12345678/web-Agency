@@ -55,12 +55,11 @@ export const errorHandler: ErrorHandler = (err, c) => {
   // 3. Unhandled Server Errors
   defaultLogger.error('Unhandled Server Error', err, { requestId });
 
-  const isProduction = process.env.NODE_ENV === 'production';
   const response: ApiErrorResponse = {
     success: false,
     error: {
       code: 'INTERNAL_SERVER_ERROR',
-      message: isProduction ? 'An unexpected internal error occurred' : err.message,
+      message: err.message || 'An unexpected internal error occurred',
       requestId,
     },
   };

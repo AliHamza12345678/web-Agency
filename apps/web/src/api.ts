@@ -37,10 +37,19 @@ class ApiClient {
       headers,
     });
 
-    const data = await response.json().catch(() => ({}));
+    const text = await response.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // Non-JSON response
+    }
 
     if (!response.ok) {
-      const errorMsg = data?.error?.message || `Request failed with status ${response.status}`;
+      const errorMsg =
+        data?.error?.message ||
+        data?.message ||
+        (text && text.length < 200 && !text.includes('<!DOCTYPE') ? text : `Request failed with status ${response.status}`);
       throw new Error(errorMsg);
     }
 

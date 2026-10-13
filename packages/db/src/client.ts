@@ -37,6 +37,7 @@ export function getDb(config?: DatabaseConfig) {
     idle_timeout: idleTimeout,
     connect_timeout: connectTimeout,
     ssl: ssl ? 'require' : false,
+    prepare: false,
     onnotice: () => {}, // Suppress noisy PG notices
   });
 
