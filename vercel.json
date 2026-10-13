@@ -15,19 +15,22 @@
     {
       "source": "/api/(.*)",
       "destination": {
-        "service": "api"
+        "service": "api",
+        "path": "/api/$1"
       }
     },
     {
       "source": "/health(.*)",
       "destination": {
-        "service": "api"
+        "service": "api",
+        "path": "/health$1"
       }
     },
     {
       "source": "/widget.js",
       "destination": {
-        "service": "api"
+        "service": "api",
+        "path": "/widget.js"
       }
     },
     {
