@@ -3,7 +3,7 @@ packages:
   - 'apps/*'
 
 overrides:
-  drizzle-orm: '>=0.45.2'
+  drizzle-orm: '0.45.4'
   tinypool: '>=2.1.2'
   esbuild: '>=0.25.0'
 

@@ -22,13 +22,14 @@
     "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@openagent/core": "workspace:*",
     "drizzle-orm": "^0.40.0",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
     "drizzle-kit": "^0.30.5",
-    "typescript": "^5.8.2",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }

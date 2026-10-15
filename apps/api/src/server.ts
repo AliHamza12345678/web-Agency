@@ -11,7 +11,7 @@ dotenv.config();
 
 import { serve } from '@hono/node-server';
 import { validateEnv, defaultLogger, type Env } from '@openagent/core';
-import { closeDatabasePool, checkDatabaseHealth } from '@openagent/db';
+import { initDb, closeDatabasePool, checkDatabaseHealth } from '@openagent/db';
 import { createApp } from './app.js';
 import type { Server } from 'http';
 
@@ -35,6 +35,9 @@ async function startServer() {
     env: env.NODE_ENV,
     port: env.PORT,
   });
+
+  // Initialize the database driver (must happen before any getDb() call)
+  await initDb();
 
   // Verify DB connectivity on startup (non-fatal warning if offline during initial setup)
   const dbHealth = await checkDatabaseHealth(3000);

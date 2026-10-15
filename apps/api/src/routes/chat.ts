@@ -204,7 +204,7 @@ chatRouter.post('/stream', async (c) => {
   // 2. Validate Origin against allowed origins
   const requestOrigin = c.req.header('origin');
   if (site.allowedOrigins && site.allowedOrigins.length > 0 && requestOrigin) {
-    const isAllowed = site.allowedOrigins.some((allowed) => {
+    const isAllowed = site.allowedOrigins.some((allowed: string) => {
       if (allowed === '*' || allowed === requestOrigin) return true;
       try {
         const allowedHost = new URL(allowed).host;
