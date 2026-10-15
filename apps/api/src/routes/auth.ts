@@ -56,6 +56,20 @@ authRouter.post('/register', async (c) => {
     throw new ValidationError('Malformed JSON payload');
   });
 
+  if (body && typeof body.email === 'string') {
+    let emailStr = body.email.trim();
+    if (emailStr.endsWith('@gmailcom')) {
+      emailStr = emailStr.replace(/@gmailcom$/, '@gmail.com');
+    } else if (emailStr.endsWith('@yahoocom')) {
+      emailStr = emailStr.replace(/@yahoocom$/, '@yahoo.com');
+    } else if (emailStr.endsWith('@hotmailcom')) {
+      emailStr = emailStr.replace(/@hotmailcom$/, '@hotmail.com');
+    } else if (emailStr.endsWith('@outlookcom')) {
+      emailStr = emailStr.replace(/@outlookcom$/, '@outlook.com');
+    }
+    body.email = emailStr;
+  }
+
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
     throw new ValidationError('Validation error', parsed.error.issues);
