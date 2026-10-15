@@ -6,19 +6,7 @@ import { createApp } from '../apps/api/src/app.js';
 import { handle } from '@hono/node-server/vercel';
 import { initDb } from '@openagent/db';
 
-// ─── Production Environment Fallbacks for Vercel ─────────────────────────────
-// In case environment variables were not yet configured in the Vercel dashboard,
-// supply safe working defaults so the application functions out of the box.
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL =
-    'postgresql://neondb_owner:npg_fi8HVoAPXn7L@ep-small-field-b58fjshj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
-}
-if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'e48f7a912b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7a8b9c0d1e2f3a';
-}
-if (!process.env.ENCRYPTION_KEY) {
-  process.env.ENCRYPTION_KEY = '9f8e7d6c5b4a392817263544aabbccdd';
-}
+// ─── Environment Configuration Defaults ─────────────────────────────────────
 if (!process.env.ALLOW_REGISTRATION) {
   process.env.ALLOW_REGISTRATION = 'true';
 }

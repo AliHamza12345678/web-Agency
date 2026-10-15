@@ -31,9 +31,6 @@ const globalForDb = globalThis as unknown as {
   __openagent_neonSqlInstance?: any;
 };
 
-const DEFAULT_DATABASE_URL =
-  'postgresql://neondb_owner:npg_fi8HVoAPXn7L@ep-small-field-b58fjshj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
-
 /**
  * Initialize the database driver. Must be awaited before calling getDb().
  *
@@ -43,8 +40,12 @@ const DEFAULT_DATABASE_URL =
 export async function initDb(config?: DatabaseConfig): Promise<void> {
   if (globalForDb.__openagent_dbInstance) return; // Already initialized — idempotent
 
-  const url = config?.url || process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL environment variable is missing.');
+  const url = config?.url || process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL environment variable is missing. Please set DATABASE_URL in your environment or Vercel Project Settings.'
+    );
+  }
 
   const isVercel = !!process.env.VERCEL;
 
