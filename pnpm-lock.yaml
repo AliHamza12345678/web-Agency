@@ -16,6 +16,12 @@ importers:
       '@hono/node-server':
         specifier: ^1.19.17
         version: 1.19.17(hono@4.13.13)
+      '@neondatabase/serverless':
+        specifier: ^1.2.0
+        version: 1.2.0
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@neondatabase/serverless@1.2.0)(gel@2.2.1)(postgres@3.4.9)
       hono:
         specifier: ^4.13.13
         version: 4.13.13

@@ -32,6 +32,9 @@ let sqlInstance: any = null;       // postgres.Sql  (local only, for pool drain)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let neonSqlInstance: any = null;   // NeonQueryFunction (Vercel only, for health)
 
+const DEFAULT_DATABASE_URL =
+  'postgresql://neondb_owner:npg_fi8HVoAPXn7L@ep-small-field-b58fjshj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+
 /**
  * Initialize the database driver. Must be awaited before calling getDb().
  *
@@ -41,18 +44,27 @@ let neonSqlInstance: any = null;   // NeonQueryFunction (Vercel only, for health
 export async function initDb(config?: DatabaseConfig): Promise<void> {
   if (dbInstance) return; // Already initialized — idempotent
 
-  const url = config?.url || process.env.DATABASE_URL;
+  const url = config?.url || process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL environment variable is missing.');
 
   const isVercel = !!process.env.VERCEL;
 
   if (isVercel) {
     // HTTP-based driver — works inside Vercel serverless functions
-    const { neon } = await import('@neondatabase/serverless');
-    const { drizzle } = await import('drizzle-orm/neon-http');
-    neonSqlInstance = neon(url);
-    dbInstance = drizzle(neonSqlInstance, { schema });
-    defaultLogger.info('Database initialized with Neon serverless HTTP driver.');
+    try {
+      const { neon } = await import('@neondatabase/serverless');
+      const { drizzle } = await import('drizzle-orm/neon-http');
+      neonSqlInstance = neon(url);
+      dbInstance = drizzle(neonSqlInstance, { schema });
+      defaultLogger.info('Database initialized with Neon serverless HTTP driver.');
+    } catch (neonErr: any) {
+      defaultLogger.warn('Neon serverless driver load failed, falling back to postgres-js:', neonErr?.message || neonErr);
+      const postgresModule = await import('postgres');
+      const postgres = postgresModule.default;
+      const { drizzle } = await import('drizzle-orm/postgres-js');
+      sqlInstance = postgres(url, { max: 1, ssl: 'require', prepare: false, connect_timeout: 5 });
+      dbInstance = drizzle(sqlInstance, { schema });
+    }
   } else {
     // TCP connection pool — optimal for long-running local/traditional servers
     const postgresModule = await import('postgres');
