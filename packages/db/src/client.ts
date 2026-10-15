@@ -25,12 +25,11 @@ export interface DatabaseConfig {
 //   - Locally, server.ts calls initDb() in startServer().
 // ─────────────────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let dbInstance: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sqlInstance: any = null;       // postgres.Sql  (local only, for pool drain)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let neonSqlInstance: any = null;   // NeonQueryFunction (Vercel only, for health)
+const globalForDb = globalThis as unknown as {
+  __openagent_dbInstance?: any;
+  __openagent_sqlInstance?: any;
+  __openagent_neonSqlInstance?: any;
+};
 
 const DEFAULT_DATABASE_URL =
   'postgresql://neondb_owner:npg_fi8HVoAPXn7L@ep-small-field-b58fjshj-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
@@ -42,7 +41,7 @@ const DEFAULT_DATABASE_URL =
  * Locally    → postgres + drizzle-orm/postgres-js (TCP connection pool)
  */
 export async function initDb(config?: DatabaseConfig): Promise<void> {
-  if (dbInstance) return; // Already initialized — idempotent
+  if (globalForDb.__openagent_dbInstance) return; // Already initialized — idempotent
 
   const url = config?.url || process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL environment variable is missing.');
@@ -54,16 +53,16 @@ export async function initDb(config?: DatabaseConfig): Promise<void> {
     try {
       const { neon } = await import('@neondatabase/serverless');
       const { drizzle } = await import('drizzle-orm/neon-http');
-      neonSqlInstance = neon(url);
-      dbInstance = drizzle(neonSqlInstance, { schema });
+      globalForDb.__openagent_neonSqlInstance = neon(url);
+      globalForDb.__openagent_dbInstance = drizzle(globalForDb.__openagent_neonSqlInstance, { schema });
       defaultLogger.info('Database initialized with Neon serverless HTTP driver.');
     } catch (neonErr: any) {
       defaultLogger.warn('Neon serverless driver load failed, falling back to postgres-js:', neonErr?.message || neonErr);
       const postgresModule = await import('postgres');
       const postgres = postgresModule.default;
       const { drizzle } = await import('drizzle-orm/postgres-js');
-      sqlInstance = postgres(url, { max: 1, ssl: 'require', prepare: false, connect_timeout: 5 });
-      dbInstance = drizzle(sqlInstance, { schema });
+      globalForDb.__openagent_sqlInstance = postgres(url, { max: 1, ssl: 'require', prepare: false, connect_timeout: 5 });
+      globalForDb.__openagent_dbInstance = drizzle(globalForDb.__openagent_sqlInstance, { schema });
     }
   } else {
     // TCP connection pool — optimal for long-running local/traditional servers
@@ -78,7 +77,7 @@ export async function initDb(config?: DatabaseConfig): Promise<void> {
       config?.ssl ??
       (process.env.DATABASE_SSL === 'true' || url.includes('sslmode=require'));
 
-    sqlInstance = postgres(url, {
+    globalForDb.__openagent_sqlInstance = postgres(url, {
       max,
       idle_timeout: idleTimeout,
       connect_timeout: connectTimeout,
@@ -87,7 +86,7 @@ export async function initDb(config?: DatabaseConfig): Promise<void> {
       onnotice: () => {}, // Suppress noisy PG notices
     });
 
-    dbInstance = drizzle(sqlInstance, { schema });
+    globalForDb.__openagent_dbInstance = drizzle(globalForDb.__openagent_sqlInstance, { schema });
     defaultLogger.info('Database initialized with postgres TCP pool.');
   }
 }
@@ -97,13 +96,14 @@ export async function initDb(config?: DatabaseConfig): Promise<void> {
  * Throws if initDb() was not awaited before first use.
  */
 export function getDb(_config?: DatabaseConfig) {
-  if (!dbInstance) {
+  const instance = globalForDb.__openagent_dbInstance;
+  if (!instance) {
     throw new Error(
       'Database not initialized. Ensure initDb() is awaited at server startup ' +
       'before any route handler is called.'
     );
   }
-  return dbInstance;
+  return instance;
 }
 
 /**
@@ -114,7 +114,7 @@ export async function checkDatabaseHealth(
   timeoutMs = 3000
 ): Promise<{ healthy: boolean; error?: string }> {
   try {
-    const queryFn = neonSqlInstance ?? sqlInstance;
+    const queryFn = globalForDb.__openagent_neonSqlInstance ?? globalForDb.__openagent_sqlInstance;
     if (!queryFn) {
       return { healthy: false, error: 'Database client not initialized. Call initDb() first.' };
     }
@@ -145,17 +145,17 @@ export async function checkDatabaseHealth(
  * On Vercel there is no persistent pool to close.
  */
 export async function closeDatabasePool(): Promise<void> {
-  if (sqlInstance) {
+  if (globalForDb.__openagent_sqlInstance) {
     try {
       defaultLogger.info('Draining database connection pool...');
-      await sqlInstance.end({ timeout: 5 });
+      await globalForDb.__openagent_sqlInstance.end({ timeout: 5 });
       defaultLogger.info('Database connection pool closed successfully.');
     } catch (err) {
       defaultLogger.error('Error while closing database connection pool', err);
     } finally {
-      sqlInstance = null;
-      dbInstance = null;
-      neonSqlInstance = null;
+      globalForDb.__openagent_sqlInstance = null;
+      globalForDb.__openagent_dbInstance = null;
+      globalForDb.__openagent_neonSqlInstance = null;
     }
   }
 }

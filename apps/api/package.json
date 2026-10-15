@@ -2,7 +2,11 @@
   "name": "@openagent/api",
   "version": "0.1.0",
   "type": "module",
-  "main": "./dist/server.js",
+  "main": "./dist/app.js",
+  "exports": {
+    ".": "./dist/app.js",
+    "./app": "./dist/app.js"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "pnpm --filter @openagent/core build && pnpm --filter @openagent/db build && pnpm --filter @openagent/ai-provider build && pnpm --filter @openagent/conversation-engine build && pnpm --filter @openagent/knowledge build && pnpm --filter @openagent/tools build && tsc --build --force",

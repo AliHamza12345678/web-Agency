@@ -4,7 +4,7 @@ import 'drizzle-orm/neon-http';
 
 import { createApp } from '../apps/api/src/app.js';
 import { handle } from '@hono/node-server/vercel';
-import { initDb } from '../packages/db/src/client.js';
+import { initDb } from '@openagent/db';
 
 // ─── Production Environment Fallbacks for Vercel ─────────────────────────────
 // In case environment variables were not yet configured in the Vercel dashboard,
@@ -98,11 +98,38 @@ app.use('*', async (c, next) => {
 const nodeHandler = handle(app);
 
 // Dual-compatible handler supporting both Node.js serverless and web fetch runtimes
-export default function handler(req: any, res?: any) {
+export default async function handler(req: any, res?: any) {
+  // If Vercel rewrote the request URL to /api, restore the original client URL from headers
+  let pathStr = '';
+  if (req && req.headers) {
+    const matchedPath =
+      req.headers['x-matched-path'] ||
+      req.headers['x-forwarded-uri'] ||
+      req.headers['x-original-uri'];
+
+    if (matchedPath && (req.url === '/api' || req.url === '/api/')) {
+      req.url = matchedPath;
+    }
+    pathStr = req.url || '';
+  } else if (req && typeof req.url === 'string') {
+    pathStr = req.url;
+  }
+
+  // Ensure database is initialized before any route that requires DB is called
+  if (!pathStr.includes('/config') && !pathStr.includes('/health') && pathStr !== '/' && !pathStr.includes('/widget.js')) {
+    await ensureDb();
+  }
+
   if (res && typeof res.writeHead === 'function') {
     return nodeHandler(req, res);
   }
   return app.fetch(req);
 }
 
-handler.fetch = app.fetch.bind(app);
+handler.fetch = async (req: Request, ...args: any[]) => {
+  const url = new URL(req.url);
+  if (!url.pathname.includes('/config') && !url.pathname.includes('/health') && url.pathname !== '/' && !url.pathname.includes('/widget.js')) {
+    await ensureDb();
+  }
+  return app.fetch(req, ...args);
+};
